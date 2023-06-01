@@ -1,36 +1,90 @@
-version: '3'
+version: '3.7'
 
-volumes:
-  postgres_data:
-    driver: local
+networks:
+  ml-network:
+    driver: bridge
 
 services:
   postgres:
     image: postgres:latest
-    volumes:
-      - postgres_data:/var/lib/postgressql/postgres_data
     env_file:
       - .env
     environment:
-      - POSTGRES_DB=$DB_NAME
-      - POSTGRES_USER=$DB_USER
-      - POSTGRES_PASSWORD=$DB_PASSWORD
+      - POSTGRES_DB=$PG_NAME
+      - POSTGRES_USER=$PG_USER
+      - POSTGRES_PASSWORD=$PG_PASSWORD
     ports:
-      - $DB_PORT:$DB_PORT
+      - $PG_PORT:5432
+    networks:
+      - ml-network
+
   keycloak:
     image: jboss/keycloak:latest
     env_file:
       - .env
     environment:
-      - DB_VENDOR=$DB_VENDOR
-      - DB_ADDR=$DB_ADDR
-      - DB_DATABASE=$DB_NAME
-      - DB_USER=$DB_USER
-      - DB_SCHEMA=$DB_SCHEMA
-      - DB_PASSWORD=$DB_PASSWORD
+      - DB_VENDOR=$PG_VENDOR
+      - DB_ADDR=$PG_ADDR
+      - DB_DATABASE=$PG_NAME
+      - DB_USER=$PG_USER
+      - DB_SCHEMA=$PG_SCHEMA
+      - DB_PASSWORD=$PG_PASSWORD
       - KEYCLOAK_USER=$KEYCLOAK_USER
       - KEYCLOAK_PASSWORD=$KEYCLOAK_PASSWORD
     ports:
-      - $KEYCLOAK_PORT:$KEYCLOAK_PORT
+      - $KEYCLOAK_PORT:8080
     depends_on:
       - postgres
+    networks:
+      - ml-network
+
+  ldap-account-manager:
+    image: ldapaccountmanager/lam
+    restart: unless-stopped
+    ports:
+      - $LDAP_ACCOUNT_MANAGER_PORT:80
+    env_file:
+      - .env
+    environment:
+      - LAM_PASSWORD=$LAM_PASSWORD
+      - LAM_LANG=en_US
+      - LDAP_SERVER=$LDAP_SERVER
+      - LDAP_DOMAIN=$LDAP_DOMAIN
+      - LDAP_BASE_DN=$LDAP_BASE_DN
+      - ADMIN_USER=cn=admin,$LDAP_BASE_DN
+      - DEBUG=true
+    hostname: ldap-account-manager
+    depends_on:
+      - openldap
+    networks:
+      - ml-network
+
+  openldap:
+    image: osixia/openldap:latest
+    container_name: openldap
+    hostname: ldap
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - LDAP_ORGANISATION=$LDAP_ORGANISATION
+      - LDAP_DOMAIN=$LDAP_DOMAIN
+      - LDAP_ADMIN_USERNAME=$LDAP_ADMIN_USERNAME
+      - LDAP_ADMIN_PASSWORD=$LDAP_ADMIN_PASSWORD
+      - LDAP_CONFIG_PASSWORD=$LDAP_CONFIG_PASSWORD
+      - 'LDAP_BASE_DN=dc=ml,dc=com'
+      - LDAP_TLS_CRT_FILENAME=$LDAP_TLS_CRT_FILENAME
+      - LDAP_TLS_KEY_FILENAME=$LDAP_TLS_KEY_FILENAME
+      - LDAP_TLS_CA_CRT_FILENAME=$LDAP_TLS_CA_CRT_FILENAME
+      - LDAP_READONLY_USER=$LDAP_READONLY_USER
+      - LDAP_READONLY_USER_USERNAME=$LDAP_READONLY_USER_USERNAME
+      - LDAP_READONLY_USER_PASSWORD=$LDAP_READONLY_USER_PASSWORD
+    volumes:
+      - ./data/certificates:/container/service/slapd/assets/certs
+      - ./data/slapd/database:/var/lib/ldap
+      - ./data/slapd/config:/etc/ldap/slapd.d
+    ports:
+      - $LDAP_PORT_FIRST:389
+      - $LDAP_PORT_SECOND:636
+    networks:
+      - ml-network
