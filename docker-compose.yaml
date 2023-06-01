@@ -1,9 +1,5 @@
 version: '3.7'
 
-networks:
-  ml-network:
-    driver: bridge
-
 services:
   postgres:
     image: postgres:latest
@@ -88,3 +84,8 @@ services:
       - $LDAP_PORT_SECOND:636
     networks:
       - ml-network
+
+networks:
+  ml-network:
+    driver: bridge
+    external: true
