@@ -34,9 +34,9 @@ services:
     networks:
       - ml-network
 
-  openldap:
+  app_openldap:
     image: osixia/openldap:latest
-    container_name: openldap
+    container_name: app_openldap
     hostname: ldap
     restart: unless-stopped
     env_file:
@@ -81,7 +81,7 @@ services:
       - DEBUG=true
     hostname: ldap-account-manager
     depends_on:
-      - openldap
+      - app_openldap
     networks:
       - ml-network
 
