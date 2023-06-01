@@ -34,27 +34,6 @@ services:
     networks:
       - ml-network
 
-  ldap-account-manager:
-    image: ldapaccountmanager/lam
-    restart: unless-stopped
-    ports:
-      - $LDAP_ACCOUNT_MANAGER_PORT:80
-    env_file:
-      - .env
-    environment:
-      - LAM_PASSWORD=$LAM_PASSWORD
-      - LAM_LANG=en_US
-      - LDAP_SERVER=$LDAP_SERVER
-      - LDAP_DOMAIN=$LDAP_DOMAIN
-      - LDAP_BASE_DN=$LDAP_BASE_DN
-      - ADMIN_USER=cn=admin,$LDAP_BASE_DN
-      - DEBUG=true
-    hostname: ldap-account-manager
-    depends_on:
-      - openldap
-    networks:
-      - ml-network
-
   openldap:
     image: osixia/openldap:latest
     container_name: openldap
@@ -85,7 +64,27 @@ services:
     networks:
       - ml-network
 
+  ldap-account-manager:
+    image: ldapaccountmanager/lam
+    restart: unless-stopped
+    ports:
+      - $LDAP_ACCOUNT_MANAGER_PORT:80
+    env_file:
+      - .env
+    environment:
+      - LAM_PASSWORD=$LAM_PASSWORD
+      - LAM_LANG=en_US
+      - LDAP_SERVER=$LDAP_SERVER
+      - LDAP_DOMAIN=$LDAP_DOMAIN
+      - LDAP_BASE_DN=$LDAP_BASE_DN
+      - ADMIN_USER=cn=admin,$LDAP_BASE_DN
+      - DEBUG=true
+    hostname: ldap-account-manager
+    depends_on:
+      - openldap
+    networks:
+      - ml-network
+
 networks:
   ml-network:
-    driver: bridge
     external: true
