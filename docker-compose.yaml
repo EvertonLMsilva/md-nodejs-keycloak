@@ -65,7 +65,7 @@ services:
       - ml-network
 
   ldap-account-manager:
-    image: ldapaccountmanager/lam:latest
+    image: ghcr.io/ldapaccountmanager/lam:latest
     restart: unless-stopped
     ports:
       - $LDAP_ACCOUNT_MANAGER_PORT:80
